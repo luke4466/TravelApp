@@ -1,5 +1,6 @@
 package com.example.lukaszgielec.travelplanner;
 
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
@@ -10,6 +11,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -20,7 +22,9 @@ import org.json.JSONObject;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 public class AddTripActivity extends AppCompatActivity {
@@ -56,6 +60,52 @@ public class AddTripActivity extends AppCompatActivity {
         startDate = findViewById(R.id.startDate);
         endDate = findViewById(R.id.endDate);
 
+        startDate.setFocusable(false);
+        endDate.setFocusable(false);
+
+        startDate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                GregorianCalendar gregorianCalendar = new GregorianCalendar();
+                new DatePickerDialog(view.getContext(), new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker datePicker, int i, int i1, int i2) {
+                        Log.i("datePicker","i "+i+" i1 "+i1+" i2 "+i2);
+
+                        GregorianCalendar start_date = new GregorianCalendar();
+                        start_date.set(GregorianCalendar.YEAR,i);
+                        start_date.set(GregorianCalendar.MONTH,i1);
+                        start_date.set(GregorianCalendar.DAY_OF_MONTH,i2);
+                        SimpleDateFormat format = new SimpleDateFormat("dd/MM/YYYY");
+                        startDate.setText(format.format(start_date.getTime()).toString());
+
+                    }
+                }, gregorianCalendar.get(GregorianCalendar.YEAR), gregorianCalendar.get(GregorianCalendar.MONTH), gregorianCalendar.get(GregorianCalendar.DAY_OF_MONTH)).show();
+
+            }
+        });
+
+        endDate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                GregorianCalendar gregorianCalendar = new GregorianCalendar();
+                new DatePickerDialog(view.getContext(), new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker datePicker, int i, int i1, int i2) {
+                        Log.i("datePicker","i "+i+" i1 "+i1+" i2 "+i2);
+
+                        GregorianCalendar start_date = new GregorianCalendar();
+                        start_date.set(GregorianCalendar.YEAR,i);
+                        start_date.set(GregorianCalendar.MONTH,i1);
+                        start_date.set(GregorianCalendar.DAY_OF_MONTH,i2);
+                        SimpleDateFormat format = new SimpleDateFormat("dd/MM/YYYY");
+                        endDate.setText(format.format(start_date.getTime()).toString());
+
+                    }
+                }, gregorianCalendar.get(GregorianCalendar.YEAR), gregorianCalendar.get(GregorianCalendar.MONTH), gregorianCalendar.get(GregorianCalendar.DAY_OF_MONTH)).show();
+            }
+        });
+
         createButton = findViewById(R.id.createButton);
         createButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -75,29 +125,19 @@ public class AddTripActivity extends AppCompatActivity {
             progressBar.setVisibility(View.VISIBLE);
             createButton.setClickable(false);
         }
-
-        String errorText = "";
+        JSONObject feedback = new JSONObject();
         @Override
         protected Void doInBackground(Void... voids) {
 
             try {
 
 
-                JSONObject postData = new JSONObject();
-
+/*
                 if (tripName.getText().toString().isEmpty()){
                     errorText+="Podaj nazwę wyjazdu \n";
                 }
 
-                for (int i = 0; i<JSONtowns.length(); i++){
 
-                    if (townName.getText().toString().matches(JSONtowns.getJSONObject(i).getString("name"))){
-
-                        postData.put("town_id",JSONtowns.getJSONObject(i).getInt("id"));
-                        break;
-                    }
-
-                }
 
                 if (!postData.has("town_id")){
                     errorText+="Wybierz miasto z proponowanych\n";
@@ -125,18 +165,27 @@ public class AddTripActivity extends AppCompatActivity {
                 if (!errorText.equals("")){
 
                 }else {
+*/
+                    JSONObject postData = new JSONObject();
+
+                for (int i = 0; i<JSONtowns.length(); i++){
+
+                    if (townName.getText().toString().matches(JSONtowns.getJSONObject(i).getString("name"))){
+
+                        postData.put("town_id",JSONtowns.getJSONObject(i).getInt("id"));
+                        break;
+                    }
+
+                }
 
                     postData.put("name",tripName.getText().toString());
                     postData.put("start_date",startDate.getText().toString());
                     postData.put("end_date",endDate.getText().toString());
 
 
-
-
                     SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences(getApplicationContext().getPackageName(),MODE_PRIVATE);
-                    JSONObject feedback = DatabaseConnector.performPostCall("http://192.168.0.12:3000/trips",postData,sharedPreferences.getString("token",""));
+                    feedback = DatabaseConnector.performPostCall("/trips",postData,sharedPreferences.getString("token",""),getApplicationContext());
                     Log.i("CreateTrip",feedback.toString());
-                }
 
 
 
@@ -154,14 +203,45 @@ public class AddTripActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            if (!errorText.equals("")){
-                errorMsg.setText(errorText);
-                errorMsg.setVisibility(View.VISIBLE);
-                progressBar.setVisibility(View.GONE);
-                createButton.setClickable(true);
-            }else {
-                startActivity(new Intent(getApplicationContext(),MainActivity.class));
+            try{
+
+                if (feedback.getInt("responseCode") == 200){
+                    startActivity(new Intent(getApplicationContext(),MainActivity.class));
+                }else {
+
+                    JSONObject errors = feedback.getJSONObject("errors");
+
+                    String errorText = "";
+
+                    if(errors.has("start_date")){
+                        errorText+="start date "+errors.getJSONArray("start_date").get(0).toString();
+                        errorText+="\n";
+                    }
+                    if(errors.has("end_date")){
+                        errorText+="end date "+errors.getJSONArray("end_date").get(0).toString();
+                        errorText+="\n";
+                    }
+                    if(errors.has("town_id")){
+                        errorText+="town "+errors.getJSONArray("town_id").get(0).toString();
+                        errorText+="\n";
+                    }
+                    if(errors.has("name")){
+                        errorText+="name "+errors.getJSONArray("name").get(0).toString();
+                        errorText+="\n";
+                    }
+
+
+                    errorMsg.setText(errorText);
+                    errorMsg.setVisibility(View.VISIBLE);
+                    progressBar.setVisibility(View.GONE);
+                    createButton.setClickable(true);
+
+                }
+
+            }catch (Exception e){
+                e.printStackTrace();
             }
+
 
         }
     }
@@ -175,7 +255,7 @@ public class AddTripActivity extends AppCompatActivity {
         protected Void doInBackground(Void... voids) {
             try{
 
-                response = DatabaseConnector.performGetCall("http://192.168.0.12:3000/towns","");
+                response = DatabaseConnector.performGetCall("/towns","",getApplicationContext());
                 Log.i("townsList",response.toString());
 
             }catch (Exception e){

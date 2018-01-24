@@ -1,8 +1,11 @@
 package com.example.lukaszgielec.travelplanner;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
+
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -19,6 +22,8 @@ import java.util.HashMap;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import static android.content.Context.MODE_PRIVATE;
+
 /**
  * Created by Lukasz Gielec on 20.01.2018.
  */
@@ -28,13 +33,16 @@ public abstract class DatabaseConnector {
 
 
     public static JSONObject  performPostCall(String requestURL,
-                                   JSONObject postData) {
+                                              JSONObject postData, Context mContext) {
+
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(mContext.getPackageName(),MODE_PRIVATE);
+        String serverIP = "http://" + sharedPreferences.getString("ip","192.168.0.12:3000");
 
         JSONObject JSONresponse = new JSONObject();
         URL url;
         String response = "";
         try {
-            url = new URL(requestURL);
+            url = new URL(serverIP+requestURL);
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setReadTimeout(15000);
@@ -96,13 +104,16 @@ public abstract class DatabaseConnector {
     }
 
     public static JSONObject  performGetCall(String requestURL,
-                                              String token) {
+                                              String token, Context mContext) {
+
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(mContext.getPackageName(),MODE_PRIVATE);
+        String serverIP = "http://" + sharedPreferences.getString("ip","192.168.0.12:3000");
 
         JSONObject JSONresponse = new JSONObject();
         URL url;
         String response = "";
         try {
-            url = new URL(requestURL);
+            url = new URL(serverIP+requestURL);
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
@@ -152,13 +163,16 @@ public abstract class DatabaseConnector {
     }
 
     public static JSONObject  performPostCall(String requestURL,
-                                              JSONObject postData,String token) {
+                                              JSONObject postData,String token, Context mContext) {
+
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(mContext.getPackageName(),MODE_PRIVATE);
+        String serverIP = "http://" + sharedPreferences.getString("ip","192.168.0.12:3000");
 
         JSONObject JSONresponse = new JSONObject();
         URL url;
         String response = "";
         try {
-            url = new URL(requestURL);
+            url = new URL(serverIP+requestURL);
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setReadTimeout(15000);
@@ -218,5 +232,27 @@ public abstract class DatabaseConnector {
         }
 
         return JSONresponse;
+    }
+
+
+    public static JSONObject sendDeviceID(Context mContext){
+
+        String deviceID = FirebaseInstanceId.getInstance().getToken();
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(mContext.getPackageName(),MODE_PRIVATE);
+
+        JSONObject postData = new JSONObject();
+        try{
+            postData.put("device_id",deviceID);
+            postData.put("token",sharedPreferences.getString("token",""));
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+        Log.i("DEVICEID",postData.toString());
+
+        return performPostCall("/device_id",postData,mContext);
+
+
     }
 }

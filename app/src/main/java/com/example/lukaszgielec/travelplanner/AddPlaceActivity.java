@@ -52,13 +52,14 @@ public class AddPlaceActivity extends AppCompatActivity {
         townID = getIntent().getIntExtra("town_id",0);
         tripID = getIntent().getIntExtra("trip_id",0);
         if (townID == 0 || tripID == 0){
-            startActivity(new Intent(getApplicationContext(),MainActivity.class));
+            startActivity(new Intent(getApplicationContext(),LoginActivity.class));
         }
 
         getSupportActionBar().setTitle("Dodaj miejsca");
 
         placesContainer = findViewById(R.id.placesContainer);
         search = findViewById(R.id.search);
+        search.clearFocus();
         progressBar = findViewById(R.id.progressBar);
 
 
@@ -108,12 +109,12 @@ public class AddPlaceActivity extends AppCompatActivity {
         protected Void doInBackground(Void... voids) {
             try{
 
-                response = DatabaseConnector.performGetCall("http://192.168.0.12:3000/towns/"+townID+"/places","");
+                response = DatabaseConnector.performGetCall("/towns/"+townID+"/places","",getApplicationContext());
                 Log.i("places",response.toString());
                 places = response.getJSONObject("response").getJSONArray("places");
 
                 SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences(getApplicationContext().getPackageName(),MODE_PRIVATE);
-                JSONObject response = DatabaseConnector.performGetCall("http://192.168.0.12:3000/trips/"+tripID,sharedPreferences.getString("token",""));
+                JSONObject response = DatabaseConnector.performGetCall("/trips/"+tripID,sharedPreferences.getString("token",""),getApplicationContext());
                 Log.i("tripPlaces",response.toString());
                 tripPlaces = response.getJSONObject("response").getJSONArray("places");
 
@@ -128,7 +129,6 @@ public class AddPlaceActivity extends AppCompatActivity {
                         }
 
                     }
-
 
                 }
 
@@ -325,7 +325,7 @@ public class AddPlaceActivity extends AppCompatActivity {
                 placesINDEX = integers[2];
 
                     SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences(getApplicationContext().getPackageName(),MODE_PRIVATE);
-                    response = DatabaseConnector.performGetCall("http://192.168.0.12:3000/trips/"+tripID+"/removeplace?place="+integers[0],sharedPreferences.getString("token",""));
+                    response = DatabaseConnector.performGetCall("/trips/"+tripID+"/removeplace?place="+integers[0],sharedPreferences.getString("token",""),getApplicationContext());
                     Log.i("DELETE response", response.toString());
 
 
@@ -379,7 +379,7 @@ public class AddPlaceActivity extends AppCompatActivity {
                 placesINDEX = integers[2];
 
                 SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences(getApplicationContext().getPackageName(),MODE_PRIVATE);
-                response = DatabaseConnector.performGetCall("http://192.168.0.12:3000/trips/"+tripID+"/addplace?place="+integers[0],sharedPreferences.getString("token",""));
+                response = DatabaseConnector.performGetCall("/trips/"+tripID+"/addplace?place="+integers[0],sharedPreferences.getString("token",""),getApplicationContext());
                 Log.i("DELETE response", response.toString());
 
 
@@ -424,17 +424,21 @@ public class AddPlaceActivity extends AppCompatActivity {
         @Override
         public void onClick(View view) {
 
+
             if(!isLoadingReviews){
-                mContext = view.getContext();
-                ShowReviewsTask showReviewsTask = new ShowReviewsTask();
+               // mContext = view.getContext();
+                //ShowReviewsTask showReviewsTask = new ShowReviewsTask();
                 placeID = (int)view.getTag();
-                showReviewsTask.execute(placeID);
+                //showReviewsTask.execute(placeID);
+                Intent intent = new Intent(getApplicationContext(),PlaceDetail.class);
+                intent.putExtra("place_id",placeID);
+                startActivity(intent);
             }
 
 
         }
 
-        private class ShowReviewsTask extends AsyncTask<Integer,Void,Void>{
+        /*private class ShowReviewsTask extends AsyncTask<Integer,Void,Void>{
 
             @Override
             protected void onPreExecute() {
@@ -449,7 +453,7 @@ public class AddPlaceActivity extends AppCompatActivity {
                 try{
 
                     SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences(getApplicationContext().getPackageName(),MODE_PRIVATE);
-                    JSONObject response = DatabaseConnector.performGetCall("http://192.168.0.12:3000/places/"+integers[0]+"/reviews",sharedPreferences.getString("token",""));
+                    JSONObject response = DatabaseConnector.performGetCall("/places/"+integers[0]+"/reviews",sharedPreferences.getString("token",""),getApplicationContext());
                     Log.i("reviews",response.toString());
                     reviews = response.getJSONObject("response").getJSONArray("reviews");
 
@@ -510,7 +514,7 @@ public class AddPlaceActivity extends AppCompatActivity {
                     }
                 }catch (Exception e){
                     e.printStackTrace();
-                }
+                }*/
 
 
 
@@ -526,13 +530,13 @@ public class AddPlaceActivity extends AppCompatActivity {
                 //        addParticipantTask.execute();
                 //    }
                 //});
-                dialog.show();
+                //dialog.show();
                 //TripActivity.AddParticipantDialog.UsernameProviderTask usernameProviderTask = new TripActivity.AddParticipantDialog.UsernameProviderTask();
                 //usernameProviderTask.execute();
 
             }
 
-            private class AddReviewTask extends AsyncTask<Void,Void,Void>{
+           /* private class AddReviewTask extends AsyncTask<Void,Void,Void>{
 
 
                 int childID;
@@ -551,7 +555,7 @@ public class AddPlaceActivity extends AppCompatActivity {
                         SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences(getApplicationContext().getPackageName(),MODE_PRIVATE);
                         JSONObject postData = new JSONObject();
                         postData.put("content",((EditText)dialog.findViewById(R.id.reviewsInput)).getText().toString());
-                        JSONObject response = DatabaseConnector.performPostCall("http://192.168.0.12:3000/places/"+placeID+"/reviews",postData,sharedPreferences.getString("token",""));
+                        JSONObject response = DatabaseConnector.performPostCall("/places/"+placeID+"/reviews",postData,sharedPreferences.getString("token",""),getApplicationContext());
                         Log.i("reviews",response.toString());
 
                     }catch (Exception e){
@@ -579,7 +583,7 @@ public class AddPlaceActivity extends AppCompatActivity {
                 }
             }
         }
-    }
+    }*/
 
 
 }

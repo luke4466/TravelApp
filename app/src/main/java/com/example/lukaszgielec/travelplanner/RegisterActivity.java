@@ -88,7 +88,7 @@ public class RegisterActivity extends AppCompatActivity {
                 postData.put("name",name);
                 postData.put("last_name",last_name);
 
-                JSONresponse = DatabaseConnector.performPostCall("http://192.168.0.12:3000/users", postData);
+                JSONresponse = DatabaseConnector.performPostCall("/users", postData,getApplicationContext());
                 Log.i("RegisterActivity",JSONresponse.toString());
 
             }catch (Exception e){

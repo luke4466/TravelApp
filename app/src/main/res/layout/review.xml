@@ -20,15 +20,15 @@
 
     <TextView
         android:id="@+id/content"
-        android:lines="2"
-        android:ellipsize="marquee"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
+        android:ellipsize="marquee"
+        android:lines="2"
         android:text="Fajowe miejsce"
-        android:textSize="14sp"
+        android:textSize="24sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"

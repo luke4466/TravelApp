@@ -95,7 +95,7 @@ public class MainFragment extends android.support.v4.app.Fragment {
             try{
 
                 SharedPreferences sharedPreferences = getContext().getSharedPreferences(getContext().getPackageName(),MODE_PRIVATE);
-                JSONresponse = DatabaseConnector.performGetCall("http://192.168.0.12:3000/trips",sharedPreferences.getString("token",""));
+                JSONresponse = DatabaseConnector.performGetCall("/trips",sharedPreferences.getString("token",""),getContext());
                 Log.i("response",JSONresponse.toString());
 
             }catch (Exception e){
@@ -141,6 +141,36 @@ public class MainFragment extends android.support.v4.app.Fragment {
 
                     if (JSONtrips.length() == 0) tripsNotFoundMsg.setVisibility(View.VISIBLE);
 
+                    JSONArray JSONtripsEnded = JSONresponse.getJSONObject("response").getJSONArray("trips_ended");
+
+                    if(JSONtripsEnded.length() != 0){
+                        View endedTripsText = getLayoutInflater().inflate(R.layout.ended_trips_text_view,null);
+                        LinearLayoutContainer.addView(endedTripsText);
+                    }
+
+                    for (int i = 0; i<JSONtripsEnded.length();i++){
+                        JSONObject JSONtrip = JSONtripsEnded.getJSONObject(i);
+                        View cardView = getLayoutInflater().inflate(R.layout.trip_cardview,null);
+                        TextView tripTitle = cardView.findViewById(R.id.tripTitle);
+                        TextView townName = cardView.findViewById(R.id.townName);
+                        TextView startDate = cardView.findViewById(R.id.dateStart);
+                        TextView endDate = cardView.findViewById(R.id.dateEnd);
+                        TextView placesCount = cardView.findViewById(R.id.placesCount);
+                        TextView participantsCount = cardView.findViewById(R.id.participantsCount);
+
+
+                        tripTitle.setText(JSONtrip.getString("trip"));
+                        townName.setText(JSONtrip.getString("town"));
+                        startDate.setText(JSONtrip.getString("start_date"));
+                        endDate.setText(JSONtrip.getString("end_date"));
+                        placesCount.setText(JSONtrip.getString("places_count"));
+                        participantsCount.setText(JSONtrip.getString("users_count"));
+
+                        CardView cardView1 = cardView.findViewById(R.id.cardView);
+                        cardView1.setTag(JSONtrip.getInt("id"));
+                        cardView1.setOnClickListener(myOnClickListener);
+                        LinearLayoutContainer.addView(cardView);
+                    }
 
                 }
 

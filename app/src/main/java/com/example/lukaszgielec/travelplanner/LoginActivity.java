@@ -1,5 +1,7 @@
 package com.example.lukaszgielec.travelplanner;
 
+import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -8,6 +10,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
@@ -24,6 +28,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,9 +45,20 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences(getApplicationContext().getPackageName(),MODE_PRIVATE);
-        if(sharedPreferences.contains("token")){
-            startActivity(new Intent(getApplicationContext(), MainActivity.class));
+
+
+        ChangeIPDialog changeIPDialog = new ChangeIPDialog();
+        changeIPDialog.showDialog(this);
+
+    }
+
+    private class SendDeviceIDTask extends AsyncTask<Void,Void,Void>{
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            JSONObject jsonObject = DatabaseConnector.sendDeviceID(getApplicationContext());
+            Log.i("wysłane IDdevice",jsonObject.toString());
+            return null;
         }
     }
 
@@ -100,8 +116,22 @@ public class LoginActivity extends AppCompatActivity {
                 JSONObject data = new JSONObject();
                 data.put("username",username);
                 data.put("password",password);
-                JSONresponse = DatabaseConnector.performPostCall("http://192.168.0.12:3000/login", data);
+                JSONresponse = DatabaseConnector.performPostCall("/login", data,getApplicationContext());
                 Log.i("LoginActivity",JSONresponse.toString());
+
+
+                if (JSONresponse.getInt("responseCode") == 200) {
+                    if (JSONresponse.getJSONObject("response").has("token")) {
+                        SharedPreferences prefs = getSharedPreferences(getApplicationContext().getPackageName(), Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = prefs.edit();
+                        editor.putString("token", JSONresponse.getJSONObject("response").getString("token"));
+                        editor.putString("id", JSONresponse.getJSONObject("response").getString("id"));
+                        editor.commit();
+                        DatabaseConnector.sendDeviceID(getApplicationContext());
+
+                    }
+                }
+
             }catch (Exception e){
                 e.printStackTrace();
             }
@@ -116,12 +146,7 @@ public class LoginActivity extends AppCompatActivity {
             try {
                 if (JSONresponse.getInt("responseCode") == 200) {
                     if (JSONresponse.getJSONObject("response").has("token")){
-                        SharedPreferences prefs = getSharedPreferences(getApplicationContext().getPackageName(), Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = prefs.edit();
-                        editor.putString("token", JSONresponse.getJSONObject("response").getString("token"));
-                        editor.putString("id", JSONresponse.getJSONObject("response").getString("id"));
 
-                        editor.commit();
                         startActivity(new Intent(getApplicationContext(), MainActivity.class));
 
                     }
@@ -162,6 +187,48 @@ public class LoginActivity extends AppCompatActivity {
 
     }
 
+
+    public class ChangeIPDialog {
+
+        EditText ipEditText;
+        Dialog dialog;
+
+        public void showDialog(Activity activity) {
+            dialog = new Dialog(activity);
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            dialog.setCancelable(true);
+            dialog.setContentView(R.layout.change_ip_dialog);
+            ipEditText = dialog.findViewById(R.id.ipEditText);
+            SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences(getApplicationContext().getPackageName(),MODE_PRIVATE);
+            ipEditText.setText(sharedPreferences.getString("ip","192.168.0.12:3000"));
+
+            final Button dialogButton = dialog.findViewById(R.id.button);
+            dialogButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+
+                    SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences(getApplicationContext().getPackageName(),MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.putString("ip", ipEditText.getText().toString());
+                    editor.commit();
+
+
+
+
+                    if(sharedPreferences.contains("token")){
+                        SendDeviceIDTask sendDeviceIDTask = new SendDeviceIDTask();
+                        sendDeviceIDTask.execute();
+                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                    }
+
+                    dialog.dismiss();
+                }
+            });
+            dialog.show();
+
+        }
+    }
 
 
 }

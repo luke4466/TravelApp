@@ -15,6 +15,7 @@ import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
@@ -50,9 +51,10 @@ public class TripActivity extends AppCompatActivity {
     TextView placesToSeeTextView;
 
     FloatingActionButton floatingActionButton;
-    AppBarLayout appBarLayout;
+    ImageView imageViewAppBar;
     PlaceDeleteListener placeDeleteListener = new PlaceDeleteListener();
     ParticipantDeleteListener participantDeleteListener = new ParticipantDeleteListener();
+    PlaceOnClickListener placeOnClickListener = new PlaceOnClickListener();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,14 +62,14 @@ public class TripActivity extends AppCompatActivity {
 
         tripID = getIntent().getIntExtra("trip_id",0);
         if (tripID == 0){
-            startActivity(new Intent(getApplicationContext(),MainActivity.class));
+            startActivity(new Intent(getApplicationContext(),LoginActivity.class));
         }
 
         setContentView(R.layout.trip_activity);
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         collapsingToolbarLayout = findViewById(R.id.toolbar_layout);
-        appBarLayout = findViewById(R.id.app_bar);
+        imageViewAppBar = findViewById(R.id.imageAppBar);
 
         //Picasso.with(getApplicationContext()).load(R.drawable.ic_add_black_48dp).into();
 
@@ -123,7 +125,7 @@ public class TripActivity extends AppCompatActivity {
             participantsContainer.removeAllViews();
         }
 
-        BitmapDrawable background;
+        Bitmap background;
         @Override
         protected Void doInBackground(Void... voids) {
 
@@ -131,7 +133,7 @@ public class TripActivity extends AppCompatActivity {
 
 
                 sharedPreferences = getApplicationContext().getSharedPreferences(getApplicationContext().getPackageName(),MODE_PRIVATE);
-                response = DatabaseConnector.performGetCall("http://192.168.0.12:3000/trips/"+tripID,sharedPreferences.getString("token",""));
+                response = DatabaseConnector.performGetCall("/trips/"+tripID,sharedPreferences.getString("token",""),getApplicationContext());
                 Log.i("responseTripDetails",response.toString());
 
                 places = response.getJSONObject("response").getJSONArray("places");
@@ -139,8 +141,8 @@ public class TripActivity extends AppCompatActivity {
                 townID = response.getJSONObject("response").getInt("town_id");
 
 
-                Bitmap bitmap = BitmapFactory.decodeStream((InputStream)new URL("http://192.168.0.12:3000/"+response.getJSONObject("response").getString("photo_url")).getContent());
-                background = new BitmapDrawable(bitmap);
+                background = BitmapFactory.decodeStream((InputStream)new URL("http://"+sharedPreferences.getString("ip","")+response.getJSONObject("response").getString("photo_url")).getContent());
+
 
 
 
@@ -178,6 +180,12 @@ public class TripActivity extends AppCompatActivity {
 
                         deleteButton.setTag(JSONplace.getInt("id"));
                         deleteButton.setOnClickListener(placeDeleteListener);
+
+                       CardView cardView1 = cardView.findViewById(R.id.cardView);
+                       cardView1.setTag(JSONplace.getInt("id"));
+                       cardView1.setOnClickListener(placeOnClickListener);
+
+
                         placesContainer.addView(cardView);
                     }
 
@@ -218,8 +226,11 @@ public class TripActivity extends AppCompatActivity {
                     //collapsingToolbarLayout.setExpandedTitleColor();
                    //collapsingToolbarLayout.setTi(""+response.getJSONObject("response").getString("town_name"));
                     infoTextView.setText(""+response.getJSONObject("response").getString("name")+"\n"+response.getJSONObject("response").getString("start_date")+" - "+response.getJSONObject("response").getString("end_date"));
-                    appBarLayout.setBackground(background);
+                    imageViewAppBar.setImageBitmap(background);
 
+
+                }else {
+                    startActivity(new Intent(getApplicationContext(),LoginActivity.class));
                 }
 
 
@@ -317,14 +328,14 @@ public class TripActivity extends AppCompatActivity {
                 if (type == PLACE_TYPE_DELETE){
 
                     SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences(getApplicationContext().getPackageName(),MODE_PRIVATE);
-                    response = DatabaseConnector.performGetCall("http://192.168.0.12:3000/trips/"+tripID+"/removeplace?place="+id,sharedPreferences.getString("token",""));
+                    response = DatabaseConnector.performGetCall("/trips/"+tripID+"/removeplace?place="+id,sharedPreferences.getString("token",""),getApplicationContext());
                     Log.i("DELETE response", response.toString());
 
 
                 }else if(type == PARTICIPANT_TYPE_DELETE){
 
                     SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences(getApplicationContext().getPackageName(),MODE_PRIVATE);
-                    response = DatabaseConnector.performGetCall("http://192.168.0.12:3000/trips/"+tripID+"/unjoin?user="+id,sharedPreferences.getString("token",""));
+                    response = DatabaseConnector.performGetCall("/trips/"+tripID+"/unjoin?user="+id,sharedPreferences.getString("token",""),getApplicationContext());
                     Log.i("DELETE response", response.toString());
                     if (id == Integer.parseInt(sharedPreferences.getString("id","0"))) selfDelete = true;
 
@@ -412,7 +423,7 @@ public class TripActivity extends AppCompatActivity {
             protected Void doInBackground(Void... voids) {
                 try{
 
-                    response = DatabaseConnector.performGetCall("http://192.168.0.12:3000/users","");
+                    response = DatabaseConnector.performGetCall("/users","",getApplicationContext());
                     Log.i("usersList",response.toString());
                     JSONusers = response.getJSONObject("response").getJSONArray("users");
 
@@ -461,7 +472,7 @@ public class TripActivity extends AppCompatActivity {
                         }
                     }
                     SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences(getApplicationContext().getPackageName(),MODE_PRIVATE);
-                    response = DatabaseConnector.performGetCall("http://192.168.0.12:3000/trips/"+tripID+"/join?user="+id,sharedPreferences.getString("token",""));
+                    response = DatabaseConnector.performGetCall("/trips/"+tripID+"/join?user="+id,sharedPreferences.getString("token",""),getApplicationContext());
                     Log.i("ADD response", response.toString());
 
 
@@ -497,6 +508,25 @@ public class TripActivity extends AppCompatActivity {
                 }
 
             }
+        }
+    }
+
+
+    private class PlaceOnClickListener implements View.OnClickListener{
+
+        @Override
+        public void onClick(View view) {
+
+            if (view.getTag() != null){
+
+                    Intent intent = new Intent(view.getContext(),PlaceDetail.class);
+                    intent.putExtra("place_id",(int)view.getTag());
+                    startActivity(intent);
+
+
+            }
+
+
         }
     }
 }

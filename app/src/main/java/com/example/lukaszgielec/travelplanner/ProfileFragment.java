@@ -52,7 +52,7 @@ public class ProfileFragment extends  android.support.v4.app.Fragment {
                 progressBar.setVisibility(View.VISIBLE);
                 view.setClickable(false);
                 SharedPreferences sharedPreferences = getContext().getSharedPreferences(getContext().getPackageName(),MODE_PRIVATE);
-                //JSONObject result = DatabaseConnector.performGetCall("http://192.168.0.12:3000/logout",sharedPreferences.getString("token",""));
+                //JSONObject result = DatabaseConnector.performGetCall("/logout",sharedPreferences.getString("token",""));
                 //Log.i("Logout",result.toString());
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.clear();
@@ -90,7 +90,7 @@ public class ProfileFragment extends  android.support.v4.app.Fragment {
             try{
                 SharedPreferences sharedPreferences = getContext().getSharedPreferences(getContext().getPackageName(),MODE_PRIVATE);
 
-                profile = DatabaseConnector.performGetCall("http://192.168.0.12:3000/users/"+sharedPreferences.getString("id","0"),sharedPreferences.getString("token",""));
+                profile = DatabaseConnector.performGetCall("/users/"+sharedPreferences.getString("id","0"),sharedPreferences.getString("token",""),getContext());
                 Log.i("profile",profile.toString());
 
 
